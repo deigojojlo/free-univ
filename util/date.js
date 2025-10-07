@@ -1,58 +1,134 @@
-const { exec } = require('node:child_process');
-const fs = require('node:fs');
-const { promisify } = require('node:util');
-const execAsync = promisify(exec);
-
 /**
- * Fetches data from a given link using a Go script and stores the result in the provided destination object.
+ * Converts a date string in the format `YYYYMMDDTHHmmss` to a structured date object.
  *
- * @param {string} link - The URL or link to fetch data from.
- * @param {string} outputFilename - The filename to save the fetched data.
- * @param {Object} dest - The destination object to merge the fetched data into.
- * @returns {Promise<void>} A promise that resolves when the fetch is complete.
+ * @param {string} dateString - The date string to parse (e.g., `"20231225T143045"`).
+ * @returns {Object} A structured date object with properties: `Year`, `Month`, `Day`, `Hour`, `Minute`, and `Seconde`.
  */
-async function fetch(link, outputFilename) {
-    try {
-        const { stdout, stderr } = await execAsync(`go run fetch.go ${link} ${outputFilename}`);
-
-        if (stdout) console.log(`stdout: ${stdout}`);
-        if (stderr) console.error(`stderr: ${stderr}`);
-
-        const data = read(outputFilename);
-    } catch (error) {
-        console.error(`Error executing fetch command: ${error}`);
-        throw error; // Re-throw to allow handling by the caller
-    }
+function stringToDate(dateString) {
+    return {
+        Year:   dateString.substring(0, 4),
+        Month:  dateString.substring(4, 6),
+        Day:    dateString.substring(6, 8),
+        Hour:   dateString.substring(9, 11),
+        Minute: dateString.substring(11, 13),
+        Seconde: dateString.substring(13, 15)
+    };
 }
 
 /**
- * Reads and parses a JSON file.
+ * Converts a structured date object back to a string in the format `YYYYMMDDTHHmmss`.
  *
- * @param {string} filename - The path to the JSON file.
- * @returns {Object|undefined} The parsed JSON data, or `undefined` if an error occurs.
+ * @param {Object} date - The structured date object (e.g., `{ Year: "2023", Month: "12", ... }`).
+ * @returns {string} The formatted date string (e.g., `"20231225T143045"`).
  */
-function read(filename) {
-    try {
-        const data = fs.readFileSync(filename, 'utf8');
-        return JSON.parse(data);
-    } catch (err) {
-        return undefined;
-    }
+function dateToString(date) {
+    return date.Year + date.Month + date.Day + "T" + date.Hour + date.Minute + date.Seconde;
 }
 
-function createdDate (file) {
-    try {
-    const { birthtime } = fs.statSync(file)
-    return birthtime
-    } catch (err){
-        return undefined;
-    }
+/**
+ * Converts a structured date object to a European-style date string (e.g., `DD/MM/YYYY HH:mm:ss`).
+ *
+ * @param {Object} date - The structured date object.
+ * @returns {string} The formatted European date string (e.g., `"25/12/2023 à 14:30:45"`).
+ */
+function toEUString(date) {
+    return `${date.Day}/${date.Month}/${date.Year} à ${date.Hour}:${date.Minute}:${date.Seconde}`;
 }
 
-function isRecent( time){
+/**
+ * Converts a structured date object to a European-style time string (e.g., `HH:mm:ss`).
+ *
+ * @param {Object} date - The structured date object.
+ * @returns {string} The formatted time string (e.g., `"14:30:45"`).
+ */
+function toEUHourString(date) {
+    return `${date.Hour}:${date.Minute}:${date.Seconde}`;
+}
+
+/**
+ * Converts a structured date object to a European-style date string (e.g., `DD/MM/YYYY`).
+ *
+ * @param {Object} date - The structured date object.
+ * @returns {string} The formatted European date string (e.g., `"25/12/2023"`).
+ */
+function toEUDayString(date) {
+    return `${date.Day}/${date.Month}/${date.Year}`;
+}
+
+/**
+ * Converts a structured date object to a compact date string (e.g., `YYYYMMDD`).
+ *
+ * @param {Object} date - The structured date object.
+ * @returns {string} The compact date string (e.g., `"20231225"`).
+ */
+function dateToDayString(date) {
+    return date.Year + date.Month + date.Day;
+}
+
+/**
+ * Compares two structured date objects to check if they represent the same day.
+ *
+ * @param {Object} date1 - The first structured date object.
+ * @param {Object} date2 - The second structured date object.
+ * @returns {boolean} `true` if the dates represent the same day, otherwise `false`.
+ */
+function dayEquals(date1, date2) {
+    return date1.Year + date1.Month + date1.Day === date2.Year + date2.Month + date2.Day;
+}
+
+/**
+ * Gets the current date or a future/past date based on a gap in days.
+ *
+ * @param {number} [gap=0] - The number of days to add (or subtract if negative) from the current date.
+ * @returns {Date} A `Date` object representing the current date plus the gap.
+ */
+function getDate(gap = 0) {
     const date = new Date();
-    date.setTime( date.getTime() - (60*60*1000) * 7);
-    return time.toISOString().localeCompare(date.toISOString()) >= 0;
+    date.setTime(date.getTime() + (gap * 24 + 2) *(3600000));
+    return date;
 }
 
-module.exports = { fetch, read, createdDate, isRecent};
+/**
+ * Formats a JavaScript `Date` object to a compact string (e.g., `YYYYMMDD`).
+ *
+ * @param {Date} date - The `Date` object to format.
+ * @returns {string} The compact date string (e.g., `"20231225"`).
+ */
+function formatDate(date) {
+    const formattedDate = date.toISOString().replaceAll("-", "").replaceAll(":", "");
+    const dateObject = stringToDate(formattedDate);
+    return dateToDayString(dateObject);
+}
+
+/**
+ * Converts a JavaScript `Date` object to an ISO-like string without separators (e.g., `YYYYMMDDTHHmmss`).
+ *
+ * @param {Date} date - The `Date` object to convert.
+ * @returns {string} The ISO-like string (e.g., `"20231225T143045"`).
+ */
+function toIsoString(date) {
+    return date.toISOString().replaceAll("-", "").replaceAll(":", "").slice(0,15);
+}
+
+/**
+ * Increases a JavaScript `Date` object by one day.
+ *
+ * @param {Date} date - The `Date` object to modify.
+ */
+function increaseDate(date) {
+    date.setDate(date.getDate() + 1);
+}
+
+module.exports = {
+    stringToDate,
+    dateToString,
+    dayEquals,
+    dateToDayString,
+    toEUString,
+    toEUHourString,
+    toEUDayString,
+    getDate,
+    formatDate,
+    toIsoString,
+    increaseDate
+};

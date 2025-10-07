@@ -1,6 +1,6 @@
-const { fetch ,read, isRecent, createdDate} = require("./loadIcs");
-const { getDate, toIsoString, stringToDate } = require("./util/date");
-const fs = require('node:fs');
+import  {fetch ,read, isRecent, createdDate} from "./util/loadIcs.js";
+import  {getDate, toIsoString, stringToDate} from "./util/date.js";
+import fs from 'node:fs';
 
 async function get(){
         const date = getDate();
@@ -44,4 +44,7 @@ async function get(){
                 
             }
         }
+        console.log(free);
 }
+
+await get();
