@@ -85,6 +85,7 @@ function dayEquals(date1, date2) {
 function getDate(gap = 0) {
     const date = new Date();
     date.setTime(date.getTime() + (gap * 24 + 2) *(3600000));
+
     return date;
 }
 

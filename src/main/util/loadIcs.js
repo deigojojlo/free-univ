@@ -49,9 +49,12 @@ function createdDate (file) {
     }
 }
 
+/*
+An .ics file is recent if the date of last edit is more than 7 day ago
+*/
 function isRecent( time){
     const date = new Date();
-    date.setTime( date.getTime() - (60*60*1000) * 7);
+    date.setTime( date.getTime() - (24*60*60*1000) * 7);
     return time.toISOString().localeCompare(date.toISOString()) >= 0;
 }
 

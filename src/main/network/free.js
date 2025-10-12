@@ -44,10 +44,11 @@ async function get(){
                 for (var i = 0 ; i < Object.keys(file).length -1 ; i++){
                     if (file[i].End < toIsoString(date) && toIsoString(date) < file[i+1].Start){
                         var freetime = 0;
-                        if (+file[i+1].StartDate.Day == +objectDate.Day + 1) continue;
+                        if (+file[i+1].StartDate.Day == +objectDate.Day + 1) // stop if it's the end of the day
+                            break;
                         else freetime = (+file[i+1].StartDate.Hour - +objectDate.Hour) * 60 + (+file[i+1].StartDate.Minute - +objectDate.Minute);
-                        free.push({"title" : title, "freetime" : freetime});
-                        break;
+                            if (!freetime <0) // prevent negative time for some error
+                                free.push({"title" : title, "freetime" : freetime});
                     }
                 }
             } catch (err) {
