@@ -40,10 +40,10 @@ function read(filename) {
     }
 }
 
-function createdDate (file) {
+function lastEditTime (file) {
     try {
-    const { birthtime } = fs.statSync(file)
-    return birthtime
+    const { mtimeMs } = fs.statSync(file)
+    return mtimeMs
     } catch (err){
         return undefined;
     }
@@ -53,9 +53,7 @@ function createdDate (file) {
 An .ics file is recent if the date of last edit is more than 7 day ago
 */
 function isRecent( time){
-    const date = new Date();
-    date.setTime( date.getTime() - (24*60*60*1000) * 7);
-    return time.toISOString().localeCompare(date.toISOString()) >= 0;
+    return Math.abs(new Date().getTime() - time) < 7 * 24 * 60 * 60 * 1000;
 }
 
-export default { fetch, read, isRecent, createdDate};
+export default { fetch, read, isRecent,lastEditTime};

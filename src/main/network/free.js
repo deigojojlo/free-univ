@@ -2,7 +2,7 @@ import  loadIcs from "../util/loadIcs.js";
 import  date from "../util/date.js";
 import fs from 'node:fs';
 
-const createdDate = loadIcs.createdDate;
+const lastEditTime = loadIcs.lastEditTime;
 const read = loadIcs.read;
 const fetch = loadIcs.fetch;
 const  getDate = date.getDate;
@@ -32,23 +32,26 @@ async function get(){
             
 
             try {
-                const createDate = createdDate("./src/resources/data/" + code + ".json");
-                if (createDate == undefined || !isRecent(createDate)){
-                    try { await fetch("https://edt.math.univ-paris-diderot.fr/data/" + code + ".ics", "./src/resources/data/"+ code + ".json"); }
+                const lastEdit = lastEditTime("./src/resources/data/" + code + ".json");
+                var file = undefined;
+                if (lastEdit == undefined || !isRecent(lastEdit)){
+                    try { console.log("fetch"); file = await fetch("https://edt.math.univ-paris-diderot.fr/data/" + code + ".ics", "./src/resources/data/"+ code + ".json")}
                     catch {fs.closeSync(fs.openSync("./src/resources/data/" + code + ".json", 'w'));}
                 }
             
-                const file = read("./src/resources/data/" + code + ".json");
+                if (file == undefined ) file = read("./src/resources/data/" + code + ".json");
                 if (file == undefined) continue;
 
                 for (var i = 0 ; i < Object.keys(file).length -1 ; i++){
                     if (file[i].End < toIsoString(date) && toIsoString(date) < file[i+1].Start){
                         var freetime = 0;
-                        if (+file[i+1].StartDate.Day == +objectDate.Day + 1) // stop if it's the end of the day
+                        if (+file[i+1].StartDate.Day <= +objectDate.Day + 1) // stop if it's the end of the day
                             break;
                         else freetime = (+file[i+1].StartDate.Hour - +objectDate.Hour) * 60 + (+file[i+1].StartDate.Minute - +objectDate.Minute);
-                            if (!freetime <0) // prevent negative time for some error
+                            if (freetime > 0) // prevent negative time for some error
                                 free.push({"title" : title, "freetime" : freetime});
+                            else 
+                                console.log("negative");
                     }
                 }
             } catch (err) {
